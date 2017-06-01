@@ -1,91 +1,111 @@
+import fs from 'fs';
 import ConstDependency from 'webpack/lib/dependencies/ConstDependency';
 import NullFactory from 'webpack/lib/NullFactory';
-import DefinePlugin from 'webpack/DefinePlugin';
+import webpack from 'webpack';
 import GetText from 'node-gettext';
 import MissingLocalizationError from './MissingLocalizationError';
 import getTextHandlers from './getTextHandlerFunctions';
+import gettextParser from 'gettext-parser';
 
 
 /**
  *
  * @param {string} local e.g: sv-SE
  * @param {string} the domain you want to use
- * @param {object} object of all the translations
+ * @param {file|string} either a .po file or full path to the file
  * @options {object} an option object
  * @constructor
  */
 class I18nGetTextPlugin {
-  constructor(local, domain, translation, options) {
+  constructor(local, domain, translationFile, options) {
 
     if (!local) {
       throw new Error('Missing parameter: local');
     }
 
-    if (!translation) {
+    if (!translationFile) {
       throw new Error('Missing parameter: local');
     }
 
-    this.options = options || {};
-    this.failOnMissing = !!this.options.failOnMissing;
-    this.hideMessage = this.options.hideMessage || false;
+    if (typeof translationFile === 'string') {
+      if (!fs.existsSync(translationFile)){
+        throw new Error('path supplied in translationFile is incorrect');
+      }
 
+      translationFile = fs.readFileSync(translationFile);
+    }
+
+    if (typeof translationFile !== 'object') {
+      throw new Error('translationFile is not a file');
+    }
+
+    let translation = gettextParser.po.parse(translationFile);
+
+    if (!translation) {
+      throw new Error('Could not parse the file supplied.');
+    }
+
+    this.options = Object.assign(options || {
+        failOnMissing: false,
+        hideMessage: false
+      }, options);
+
+    domain = domain || 'messages';
     this.GetText = new GetText();
     this.GetText.addTranslations(local, domain, translation);
     this.GetText.setLocale(local);
   }
 
   apply(compiler) {
-    const { GetText, failOnMissing, hideMessage } = this;
+    const { GetText, options: { failOnMissing, hideMessage } } = this;
 
-
+    /*
     compiler.plugin('make', function(compilation, callback) {
       var childCompiler = compilation.createChildCompiler('I18nGetTextPluginExpose');
-      childCompiler.apply(new DefinePlugin({
-        ngettext: function(singular , plural, quantity) {
+      childCompiler.apply(new webpack.DefinePlugin({
+        ngt: function(singular , plural, quantity) {
           return quantity == 1 ? singular : plural;
         }
       }));
       childCompiler.runAsChild(callback);
-    });
+    });*/
 
-    compiler.plugin('compilation', (compilation, params) => {
+    compiler.plugin('compilation', (compilation) => {
       compilation.dependencyFactories.set(ConstDependency, new NullFactory());
       compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
     });
 
-    compiler.plugin('compilation', (compilation, data) => {
-      data.normalModuleFactory.plugin('parser', (parser, options) => {
-        getTextHandlers.forEach((handler) => {
-          parser.plugin(`call ${handler.name}`, function I18nGetTextPluginHandler(expr) {
-            let params = expr.arguments.map((arg) => {
-              return this.evaluateExpression(arg);
-            });
-            let result = handler.handle(params, GetText);
-            let defaultValue;
-            if (typeof result === 'undefined') {
-              let error = this.state.module[__dirname];
-              if (!error) {
-                error = new MissingLocalizationError(this.state.module, undefined, defaultValue);
-                this.state.module[__dirname] = error;
-
-                if (failOnMissing) {
-                  this.state.module.errors.push(error);
-                } else if (!hideMessage) {
-                  this.state.module.warnings.push(error);
-                }
-              }
-              result = defaultValue;
-            }
-
-            const dep = new ConstDependency(JSON.stringify(result), expr.range);
-            dep.loc = expr.loc;
-            this.state.current.addDependency(dep);
-            return true;
-          });
+    getTextHandlers.forEach((handler) => {
+      compiler.parser.plugin(`call ${handler.name}`, function I18nGetTextPluginHandler(expr) {
+        let params = expr.arguments.map((arg) => {
+          return arg.raw;
         });
+        let result = handler.handle(params, GetText);
+        let defaultValue;
+        if (typeof result === 'undefined') {
+          let error = this.state.module[__dirname];
+          if (!error) {
+            error = new MissingLocalizationError(this.state.module, undefined, defaultValue);
+            this.state.module[__dirname] = error;
+
+            if (failOnMissing) {
+              this.state.module.errors.push(error);
+            } else if (!hideMessage) {
+              this.state.module.warnings.push(error);
+            }
+          }
+          result = defaultValue;
+        }
+
+        const dep = new ConstDependency(result, expr.range);
+        dep.loc = expr.loc;
+        this.state.current.addDezpendency(dep);
+        return true;
       });
     });
   }
 }
 
-export default I18nGetTextPlugin;
+module.exports = I18nGetTextPlugin;
+
+
