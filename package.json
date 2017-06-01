@@ -1,6 +1,6 @@
 {
   "name": "i18n-gettext-webpack-plugin",
-  "version": "0.5.0",
+  "version": "0.5.6",
   "author": "yaniv kalfa",
   "description": "Embed localization into your bundle using gettext",
   "main": "./lib/index.js",
@@ -12,7 +12,7 @@
   "scripts": {
     "build:lib": "babel src --out-dir lib",
     "build": "npm run build:lib && node ./prepublish",
-    "clean": "rimraf lib dist coverage",
+    "clean": "rimraf lib",
     "lint": "eslint src test",
     "prepublish": "npm run clean && npm run build",
     "test": "mocha --compilers js:babel-register --recursive --require ./test/setup.js",
@@ -71,7 +71,10 @@
     "expect": "^1.8.0",
     "glob": "^6.0.4",
     "isparta": "4.0.0",
-    "node-gettext": "^2.0.0",
     "rimraf": "^2.3.4"
+  },
+  "dependencies": {
+    "gettext-parser": "^1.2.2",
+    "node-gettext": "^2.0.0"
   }
 }
