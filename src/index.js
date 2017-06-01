@@ -99,7 +99,7 @@ class I18nGetTextPlugin {
 
         const dep = new ConstDependency(result, expr.range);
         dep.loc = expr.loc;
-        this.state.current.addDezpendency(dep);
+        this.state.current.addDependency(dep);
         return true;
       });
     });
