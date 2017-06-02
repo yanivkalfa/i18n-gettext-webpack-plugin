@@ -62,7 +62,7 @@ class I18nGetTextPlugin {
     compiler.plugin('make', function(compilation, callback) {
       var childCompiler = compilation.createChildCompiler('I18nGetTextPluginExpose');
       childCompiler.apply(new webpack.DefinePlugin({
-        gtf: function ( format ) {
+        __gtf: function ( format ) {
           for( var i=1; i < arguments.length; i++ ) {
             format = format.replace( /%s/, arguments[i] );
           }
