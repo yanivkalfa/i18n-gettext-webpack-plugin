@@ -59,16 +59,18 @@ class I18nGetTextPlugin {
   apply(compiler) {
     const { GetText, options: { failOnMissing, hideMessage } } = this;
 
-    /*
     compiler.plugin('make', function(compilation, callback) {
       var childCompiler = compilation.createChildCompiler('I18nGetTextPluginExpose');
       childCompiler.apply(new webpack.DefinePlugin({
-        ngt: function(singular , plural, quantity) {
-          return quantity == 1 ? singular : plural;
+        gtf: function ( format ) {
+          for( var i=1; i < arguments.length; i++ ) {
+            format = format.replace( /%s/, arguments[i] );
+          }
+          return format;
         }
       }));
       childCompiler.runAsChild(callback);
-    });*/
+    });
 
     compiler.plugin('compilation', (compilation) => {
       compilation.dependencyFactories.set(ConstDependency, new NullFactory());
@@ -78,7 +80,7 @@ class I18nGetTextPlugin {
     getTextHandlers.forEach((handler) => {
       compiler.parser.plugin(`call ${handler.name}`, function I18nGetTextPluginHandler(expr) {
         let params = expr.arguments.map((arg) => {
-          return arg.raw;
+          return arg.value;
         });
         let result = handler.handle(params, GetText);
         let defaultValue;
