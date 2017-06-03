@@ -15,7 +15,7 @@ export default [
   {
     name: 'dgettext',
     handle: (GetText, params) => {
-      return JSON.stringify(GetText.dgettext.(params[0].value, params[1].value));
+      return JSON.stringify(GetText.dgettext(params[0].value, params[1].value));
     }
   },
   {
