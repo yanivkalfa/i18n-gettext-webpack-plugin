@@ -79,10 +79,7 @@ class I18nGetTextPlugin {
 
     getTextHandlers.forEach((handler) => {
       compiler.parser.plugin(`call ${handler.name}`, function I18nGetTextPluginHandler(expr) {
-        let params = expr.arguments.map((arg) => {
-          return arg.value;
-        });
-        let result = handler.handle(params, GetText);
+        let result = handler.handle(GetText, expr.arguments);
         let defaultValue;
         if (typeof result === 'undefined') {
           let error = this.state.module[__dirname];

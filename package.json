@@ -1,6 +1,6 @@
 {
   "name": "i18n-gettext-webpack-plugin",
-  "version": "0.5.10",
+  "version": "0.5.13",
   "author": "yaniv kalfa",
   "description": "Embed localization into your bundle using gettext",
   "main": "./lib/index.js",
